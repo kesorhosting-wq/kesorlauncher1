@@ -523,7 +523,7 @@ export default function App() {
             <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;700&display=swap');
         .font-khmer {
-          font-family: 'Kantumruy Pro', sans-serif ! from-inherit;
+          font-family: 'Kantumruy Pro', sans-serif !important;
         }
         html {
           scroll-behavior: smooth;
