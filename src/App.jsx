@@ -3,16 +3,25 @@ import { Copy, CreditCard, QrCode, Rocket, ShieldCheck, Terminal, Zap } from 'lu
 import { supabaseLite } from './lib/supabase';
 
 function usePathname() {
-  const [pathname, setPathname] = useState(window.location.pathname);
+  const readPath = () => window.location.hash.replace('#', '') || '/';
+  const [pathname, setPathname] = useState(readPath());
+
   useEffect(() => {
-    const onChange = () => setPathname(window.location.pathname);
+    const onChange = () => setPathname(readPath());
+    window.addEventListener('hashchange', onChange);
     window.addEventListener('popstate', onChange);
-    return () => window.removeEventListener('popstate', onChange);
+    return () => {
+      window.removeEventListener('hashchange', onChange);
+      window.removeEventListener('popstate', onChange);
+    };
   }, []);
 
   const navigate = (to) => {
-    window.history.pushState({}, '', to);
-    setPathname(to);
+    if (window.location.hash === `#${to}`) {
+      setPathname(to);
+      return;
+    }
+    window.location.hash = to;
   };
 
   return { pathname, navigate };
@@ -95,9 +104,15 @@ function AuthPage({ mode, navigate, showToast, setUser, setSession }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const isSignup = mode === 'signup';
+  const authReady = supabaseLite.isConfigured();
 
   async function onSubmit(e) {
     e.preventDefault();
+
+    if (!authReady) {
+      showToast('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env first.');
+      return;
+    }
 
     if (isSignup) {
       const { error } = await supabaseLite.signUp(email, password);
@@ -122,10 +137,11 @@ function AuthPage({ mode, navigate, showToast, setUser, setSession }) {
       <form onSubmit={onSubmit} className="rounded-2xl border border-white/10 bg-black/30 p-8">
         <h1 className="text-2xl font-semibold">{isSignup ? 'Create your account' : 'Login to Ahnajak Pay'}</h1>
         <p className="mt-2 text-sm text-slate-400">Secure login with Supabase Auth.</p>
+        {!authReady && <p className="mt-2 text-xs text-amber-300">Missing Supabase env config. Auth is disabled until .env is configured.</p>}
         <div className="mt-6 space-y-4">
           <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="you@company.com" className="w-full rounded-md border border-white/15 bg-transparent px-3 py-2" />
           <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required minLength={6} placeholder="••••••••" className="w-full rounded-md border border-white/15 bg-transparent px-3 py-2" />
-          <button className="w-full rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-4 py-2 font-medium">{isSignup ? 'Sign Up' : 'Login'}</button>
+          <button disabled={!authReady} className="w-full rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-4 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-60">{isSignup ? 'Sign Up' : 'Login'}</button>
         </div>
         <p className="mt-4 text-sm text-slate-400">
           {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}

@@ -13,6 +13,7 @@ Ahnajak Pay is a SaaS payment gateway starter for ACLEDA integration built with 
 - Recent transactions table (last 5).
 - Dashboard test buttons for QR generation and credit card flow.
 - Docs page with complete Node.js sample (install, init, checkout, status check, webhook verification).
+- Hash-based routing (`#/login`, `#/signup`, `#/dashboard`) so navigation works reliably on static hosting.
 
 ## Setup
 
@@ -29,6 +30,8 @@ Ahnajak Pay is a SaaS payment gateway starter for ACLEDA integration built with 
    ```
 
 3. Fill in your Supabase values and API base URL in `.env`.
+
+   > Without real `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY`, signup/login are intentionally disabled and show a warning.
 
 4. Run the app:
 
