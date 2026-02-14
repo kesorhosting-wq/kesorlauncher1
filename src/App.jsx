@@ -1,534 +1,420 @@
-import React, { useState, useEffect } from 'react';
-import { Download, Globe, Cpu, Zap, Layout, Users, Shield, Check, Menu, X, Heart, Star, Lock, FileText, ArrowLeft } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Copy, CreditCard, QrCode, Rocket, ShieldCheck, Terminal, Zap } from 'lucide-react';
+import { supabaseLite } from './lib/supabase';
 
-// --- TRANSLATIONS DATA ---
-const translations = {
-    en: {
-        nav: {
-            features: "Features",
-            versions: "Versions",
-            community: "Community",
-            download: "Download",
-            terms: "Terms",
-            privacy: "Privacy"
-        },
-        hero: {
-            badge: "✨ BETA 1.0.0 IS SPARKLY & LIVE ✨",
-            title: "Play Minecraft in",
-            titleAccent: "Pure Gold Style.",
-            subtitle: "The cutest, fastest, and most luxurious launcher. Kesor brings a touch of magic to your gaming experience with high performance and gold-tier features.",
-            ctaPrimary: "Download Beta 1.0.0",
-            ctaSecondary: "View Features",
-            previewText: "Preview Kesor Magic"
-        },
-        features: {
-            title: "Cute & Powerful",
-            subtitle: "Why Kesor is every player's favorite companion.",
-            performance: {
-                title: "Super-Fast Performance",
-                desc: "Optimized architecture that saves your RAM. It runs as smooth as silk and as fast as a shooting star.",
-                tag: "GOLD SPEED"
-            },
-            mods: {
-                title: "Magic Mod Install",
-                desc: "Install your favorite mods with one click. Everything is organized and sparklingly clean."
-            },
-            ui: {
-                title: "Aesthetic Interface",
-                desc: "A soft pink and gold UI designed to make you smile. Fully customizable with magical themes."
-            },
-            accounts: {
-                title: "Multi-Account Magic",
-                desc: "Switch between your Minecraft accounts effortlessly. Keep all your characters safe and sound."
-            }
-        },
-        legal: {
-            back: "Back to Home",
-            termsTitle: "Terms of Service",
-            privacyTitle: "Privacy Policy",
-            termsContent: "By using Kesor Launcher Beta, you agree to our testing terms. This is pre-release software provided 'as is'. We are not responsible for any lost diamonds or game crashes during your testing journey. Please play responsibly and be kind to others in the community.",
-            privacyContent: "We value your privacy like gold. Kesor Launcher only collects basic hardware data to optimize performance. Your Minecraft credentials are never stored on our servers; everything stays encrypted on your local device."
-        },
-        versions: {
-            title: "The Journey",
-            subtitle: "Watching Kesor grow step by step.",
-            latest: "Current Magic",
-            v1: {
-                date: "Feb 12, 2026",
-                items: [
-                    "Initial Beta Public Release",
-                    "Pink & Gold 'Blush' Theme",
-                    "Integrated Mod Browser (Alpha)",
-                    "Star-Light Optimization Engine"
-                ]
-            }
-        },
-        cta: {
-            title: "Start your adventure?",
-            subtitle: "Join the Kesor Beta family today and make your Minecraft experience more beautiful.",
-            button: "Download for Windows",
-            macos: "macOS (Apple Silicon)",
-            linux: "Linux (.AppImage)"
-        },
-        footer: {
-            disclaimer: "Not affiliated with Mojang Studios or Microsoft. Minecraft is a trademark of Mojang Synergies AB.",
-            links: ["Privacy", "Terms", "Discord", "GitHub"]
-        },
-        modal: {
-            title: "Magic is happening...",
-            desc: "Your Kesor Launcher download is starting! Get ready for a sparkling new adventure.",
-            button: "Let's Go!"
-        }
-    },
-    kh: {
-        nav: {
-            features: "មុខងារ",
-            versions: "កំណែប្រែ",
-            community: "សហគមន៍",
-            download: "ទាញយក",
-            terms: "លក្ខខណ្ឌ",
-            privacy: "ឯកជនភាព"
-        },
-        hero: {
-            badge: "✨ BETA កំណែ ១.០.០ ចេញហើយ ✨",
-            title: "លេង Minecraft តាមបែប",
-            titleAccent: "មាសដ៏ប្រណិត។",
-            subtitle: "កម្មវិធី Launcher ដែលស្អាតបំផុត លឿនបំផុត និងទំនើបបំផុត។ Kesor នាំមកនូវមន្តអាគមដល់ការលេងហ្គេមរបស់អ្នក ជាមួយនឹងសមត្ថភាពខ្ពស់ និងមុខងារកម្រិតមាស។",
-            ctaPrimary: "ទាញយក Beta 1.0.0",
-            ctaSecondary: "មើលមុខងារ",
-            previewText: "មើលការបង្ហាញ Kesor"
-        },
-        features: {
-            title: "ស្អាត និង ខ្លាំង",
-            subtitle: "ហេតុអ្វីបានជា Kesor ជាមិត្តដ៏ល្អបំផុតរបស់អ្នកលេងគ្រប់រូប?",
-            performance: {
-                title: "សមត្ថភាពលឿនដូចផ្កាយ",
-                desc: "រចនាសម្ព័ន្ធដែលបានកែលម្អ កាត់បន្ថយការប្រើ RAM។ វាដំណើរការរលូនដូចសូត្រ និងលឿនដូចផ្កាយដុះកន្ទុយ។",
-                tag: "ល្បឿនមាស"
-            },
-            mods: {
-                title: "ដំឡើង Mod បែបមន្តអាគម",
-                desc: "ដំឡើង mod ដែលអ្នកចូលចិត្តត្រឹមតែមួយឃ្លីក។ គ្រប់យ៉ាងត្រូវបានរៀបចំយ៉ាងស្អាត និងមានរបៀបរៀបរយ។",
-            },
-            ui: {
-                title: "ចំណុចប្រទាក់ផ្កាឈូក",
-                desc: "UI ពណ៌ផ្កាឈូក និងមាសដែលរចនាឡើងដើម្បីផ្តល់ភាពរីករាយ។ អាចប្តូរ theme បានតាមចិត្ត។",
-            },
-            accounts: {
-                title: "គ្រប់គ្រងគណនីច្រើន",
-                desc: "ប្តូររវាងគណនី Minecraft របស់អ្នកយ៉ាងងាយស្រួល។ រក្សាតួអង្គរបស់អ្នកដោយសុវត្ថិភាពបំផុត។",
-            }
-        },
-        legal: {
-            back: "ត្រឡប់ទៅដើមវិញ",
-            termsTitle: "លក្ខខណ្ឌប្រើប្រាស់",
-            privacyTitle: "គោលការណ៍ឯកជនភាព",
-            termsContent: "តាមរយៈការប្រើប្រាស់ Kesor Launcher Beta អ្នកយល់ព្រមតាមលក្ខខណ្ឌសាកល្បងរបស់យើង។ នេះគឺជាកម្មវិធីសាកល្បងដែលផ្តល់ជូន 'តាមស្ថានភាពជាក់ស្តែង'។ យើងមិនទទួលខុសត្រូវចំពោះការបាត់បង់ពេជ្រ ឬការគាំងហ្គេមអំឡុងពេលសាកល្បងឡើយ។ សូមលេងដោយការទទួលខុសត្រូវ។",
-            privacyContent: "យើងឱ្យតម្លៃលើឯកជនភាពរបស់អ្នកដូចជាមាស។ Kesor Launcher ប្រមូលតែទិន្នន័យ Hardware មូលដ្ឋានដើម្បីបង្កើនប្រសិទ្ធភាព។ គណនី Minecraft របស់អ្នកមិនត្រូវបានរក្សាទុកនៅលើ Server របស់យើងទេ គ្រប់យ៉ាងគឺត្រូវបានការពារនៅក្នុងម៉ាស៊ីនរបស់អ្នក។"
-        },
-        versions: {
-            title: "ការធ្វើដំណើរ",
-            subtitle: "តាមដានការរីកចម្រើនរបស់ Kesor ជាជំហានៗ។",
-            latest: "មន្តអាគមបច្ចុប្បន្ន",
-            v1: {
-                date: "១២ កុម្ភៈ ២០២៦",
-                items: [
-                    "ការចេញផ្សាយ Beta ជាសាធារណៈលើកដំបូង",
-                    "ភាសារចនាថ្មី 'Blush' ពណ៌ផ្កាឈូក & មាស",
-                    "កម្មវិធីស្វែងរក Mod (Alpha)",
-                    "ម៉ាស៊ីនបង្កើនប្រសិទ្ធភាព Star-Light"
-                ]
-            }
-        },
-        cta: {
-            title: "ចាប់ផ្តើមការផ្សងព្រេង?",
-            subtitle: "ចូលរួមគ្រួសារ Kesor Beta ថ្ងៃនេះ និងធ្វើឱ្យបទពិសោធន៍ Minecraft របស់អ្នកកាន់តែស្រស់ស្អាត។",
-            button: "ទាញយកសម្រាប់ Windows",
-            macos: "macOS (Apple Silicon)",
-            linux: "Linux (.AppImage)"
-        },
-        footer: {
-            disclaimer: "មិនមានការពាក់ព័ន្ធជាមួយ Mojang Studios ឬ Microsoft ទេ។ Minecraft គឺជាពាណិជ្ជសញ្ញារបស់ Mojang Synergies AB។",
-            links: ["ឯកជនភាព", "លក្ខខណ្ឌ", "Discord", "GitHub"]
-        },
-        modal: {
-            title: "មន្តអាគមកំពុងកើតឡើង...",
-            desc: "ការទាញយក Kesor Launcher របស់អ្នកកំពុងចាប់ផ្តើម! ត្រៀមខ្លួនសម្រាប់ការផ្សងព្រេងថ្មីដ៏អស្ចារ្យ។",
-            button: "តោះទៅ!"
-        }
+function usePathname() {
+  const readPath = () => window.location.hash.replace('#', '') || '/';
+  const [pathname, setPathname] = useState(readPath());
+
+  useEffect(() => {
+    const onChange = () => setPathname(readPath());
+    window.addEventListener('hashchange', onChange);
+    window.addEventListener('popstate', onChange);
+    return () => {
+      window.removeEventListener('hashchange', onChange);
+      window.removeEventListener('popstate', onChange);
+    };
+  }, []);
+
+  const navigate = (to) => {
+    if (window.location.hash === `#${to}`) {
+      setPathname(to);
+      return;
     }
-};
+    window.location.hash = to;
+  };
+
+  return { pathname, navigate };
+}
+
+function Toast({ message }) {
+  if (!message) return null;
+  return (
+    <div className="fixed right-4 top-4 z-50 rounded-md border border-white/20 bg-black/80 px-4 py-2 text-sm text-white shadow-lg">
+      {message}
+    </div>
+  );
+}
+
+function Layout({ children }) {
+  return (
+    <div className="min-h-screen bg-[#030308] text-slate-100">
+      <div className="fixed inset-0 -z-10 bg-[radial-gradient(circle_at_20%_20%,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_80%_20%,rgba(168,85,247,0.2),transparent_35%),radial-gradient(circle_at_50%_80%,rgba(56,189,248,0.12),transparent_40%)]" />
+      {children}
+    </div>
+  );
+}
+
+function Navbar({ user, navigate }) {
+  return (
+    <header className="border-b border-white/10 bg-[#030308]/90 backdrop-blur">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-4">
+        <button onClick={() => navigate('/')} className="text-xl font-semibold tracking-tight">
+          <span className="bg-gradient-to-r from-sky-400 to-violet-400 bg-clip-text text-transparent">Ahnajak Pay</span>
+        </button>
+        <nav className="flex items-center gap-4 md:gap-6">
+          <button className="text-sm text-slate-300 hover:text-white" onClick={() => navigate('/docs')}>Docs</button>
+          <button className="text-sm text-slate-300 hover:text-white" onClick={() => navigate('/pricing')}>Pricing</button>
+          {user ? (
+            <button className="rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-4 py-2 text-sm font-medium" onClick={() => navigate('/dashboard')}>Dashboard</button>
+          ) : (
+            <button className="rounded-md border border-white/20 px-4 py-2 text-sm font-medium hover:bg-white/5" onClick={() => navigate('/login')}>Login</button>
+          )}
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+function LandingPage({ user, navigate }) {
+  const features = [
+    { icon: ShieldCheck, title: 'Secure Encryption', body: 'Protect merchant credentials with server-side encryption best practices and strict access controls.' },
+    { icon: Terminal, title: 'Developer Friendly', body: 'Simple API patterns with x-api-key auth and copy-paste examples for Node.js integrations.' },
+    { icon: Rocket, title: 'Instant Setup', body: 'Sign up, save ACLEDA config, and start test calls in minutes from your dashboard.' },
+  ];
+
+  return (
+    <main className="mx-auto max-w-6xl px-4 py-16">
+      <section className="rounded-2xl border border-white/10 bg-black/30 p-10 text-center shadow-2xl">
+        <p className="mb-3 text-xs uppercase tracking-[0.25em] text-violet-300">SaaS Payment Gateway</p>
+        <h1 className="text-4xl font-bold leading-tight md:text-6xl">
+          Accept ACLEDA Payments with <span className="bg-gradient-to-r from-sky-400 to-violet-400 bg-clip-text text-transparent">One API.</span>
+        </h1>
+        <p className="mx-auto mt-6 max-w-2xl text-slate-300">Launch your payment flow in minutes with a cyberpunk-styled developer dashboard, secured configs, and real-time transaction visibility.</p>
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          <button className="rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-5 py-3 font-medium" onClick={() => navigate(user ? '/dashboard' : '/signup')}>Start Building</button>
+          <button className="rounded-md border border-white/20 px-5 py-3 font-medium" onClick={() => navigate('/docs')}>Read API Docs</button>
+        </div>
+      </section>
+
+      <section className="mt-10 grid gap-4 md:grid-cols-3">
+        {features.map((item) => (
+          <article key={item.title} className="rounded-xl border border-white/10 bg-black/25 p-6">
+            <item.icon className="mb-3 h-6 w-6 text-violet-300" />
+            <h3 className="mb-2 text-lg font-semibold">{item.title}</h3>
+            <p className="text-sm text-slate-300">{item.body}</p>
+          </article>
+        ))}
+      </section>
+    </main>
+  );
+}
+
+function AuthPage({ mode, navigate, showToast, setUser, setSession }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const isSignup = mode === 'signup';
+  const authReady = supabaseLite.isConfigured();
+
+  async function onSubmit(e) {
+    e.preventDefault();
+
+    if (!authReady) {
+      showToast('Set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env first.');
+      return;
+    }
+
+    if (isSignup) {
+      const { error } = await supabaseLite.signUp(email, password);
+      if (error) return showToast(error.message);
+      showToast('Account created. Please verify email if required.');
+      navigate('/login');
+      return;
+    }
+
+    const { data, error } = await supabaseLite.signIn(email, password);
+    if (error) return showToast(error.message);
+
+    const userRes = await supabaseLite.getUser(data.access_token);
+    setSession(data);
+    setUser(userRes.data);
+    showToast('Login successful. Redirecting to dashboard...');
+    navigate('/dashboard');
+  }
+
+  return (
+    <div className="mx-auto mt-12 max-w-md px-4">
+      <form onSubmit={onSubmit} className="rounded-2xl border border-white/10 bg-black/30 p-8">
+        <h1 className="text-2xl font-semibold">{isSignup ? 'Create your account' : 'Login to Ahnajak Pay'}</h1>
+        <p className="mt-2 text-sm text-slate-400">Secure login with Supabase Auth.</p>
+        {!authReady && <p className="mt-2 text-xs text-amber-300">Missing Supabase env config. Auth is disabled until .env is configured.</p>}
+        <div className="mt-6 space-y-4">
+          <input value={email} onChange={(e) => setEmail(e.target.value)} type="email" required placeholder="you@company.com" className="w-full rounded-md border border-white/15 bg-transparent px-3 py-2" />
+          <input value={password} onChange={(e) => setPassword(e.target.value)} type="password" required minLength={6} placeholder="••••••••" className="w-full rounded-md border border-white/15 bg-transparent px-3 py-2" />
+          <button disabled={!authReady} className="w-full rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-4 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-60">{isSignup ? 'Sign Up' : 'Login'}</button>
+        </div>
+        <p className="mt-4 text-sm text-slate-400">
+          {isSignup ? 'Already have an account?' : "Don't have an account?"}{' '}
+          <button type="button" className="text-sky-300" onClick={() => navigate(isSignup ? '/login' : '/signup')}>{isSignup ? 'Login' : 'Sign Up'}</button>
+        </p>
+      </form>
+    </div>
+  );
+}
+
+function DocsPage() {
+  return (
+    <div className="mx-auto grid max-w-6xl gap-6 px-4 py-10 md:grid-cols-[250px_1fr]">
+      <aside className="h-fit rounded-xl border border-white/10 bg-black/25 p-4 text-sm">
+        <p className="mb-2 font-semibold">Docs Navigation</p>
+        <ul className="space-y-2 text-slate-300">
+          <li>Installation</li>
+          <li>Initialization</li>
+          <li>Create Checkout</li>
+          <li>Check Status</li>
+          <li>Verify Webhooks</li>
+        </ul>
+      </aside>
+      <section className="rounded-xl border border-white/10 bg-black/25 p-6">
+        <h1 className="text-3xl font-semibold">API Documentation</h1>
+        <p className="mt-3 text-slate-300">Use your dashboard API key as <code>x-api-key</code> in every request.</p>
+
+        <h2 className="mt-6 text-xl font-semibold">1) Installation</h2>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-black p-4 text-sm text-sky-200">{`npm install axios crypto`}</pre>
+
+        <h2 className="mt-6 text-xl font-semibold">2) Initialization (Node.js client)</h2>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-black p-4 text-sm text-violet-200">{`const axios = require('axios');
+const crypto = require('crypto');
+
+const client = axios.create({
+  baseURL: 'https://api.ahnajak.com',
+  headers: {
+    'Content-Type': 'application/json',
+    'x-api-key': process.env.AHNAJAK_API_KEY,
+  },
+});`}</pre>
+
+        <h2 className="mt-6 text-xl font-semibold">3) Create checkout</h2>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-black p-4 text-sm text-sky-200">{`const checkout = await client.post('/checkout', {
+  order_id: 'INV-1201',
+  amount: 15.5,
+  currency: 'USD',
+  customer_name: 'Sok Dara',
+  customer_email: 'sok@example.com'
+});
+
+console.log(checkout.data);`}</pre>
+
+        <h2 className="mt-6 text-xl font-semibold">4) Check payment status</h2>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-black p-4 text-sm text-violet-200">{`const status = await client.get('/payments/INV-1201/status');
+console.log(status.data);`}</pre>
+
+        <h2 className="mt-6 text-xl font-semibold">5) Webhook signature verification</h2>
+        <pre className="mt-2 overflow-x-auto rounded-lg border border-white/10 bg-black p-4 text-sm text-sky-200">{`// Express route example
+app.post('/webhooks/ahnajak', express.raw({ type: 'application/json' }), (req, res) => {
+  const signature = req.headers['x-ahnajak-signature'];
+  const expected = crypto
+    .createHmac('sha256', process.env.AHNAJAK_WEBHOOK_SECRET)
+    .update(req.body)
+    .digest('hex');
+
+  if (signature !== expected) {
+    return res.status(401).json({ message: 'Invalid signature' });
+  }
+
+  const event = JSON.parse(req.body.toString());
+  console.log('Webhook event:', event.type, event.data);
+  res.json({ received: true });
+});`}</pre>
+      </section>
+    </div>
+  );
+}
+
+function PricingPage() {
+  return (
+    <div className="mx-auto max-w-4xl px-4 py-10">
+      <section className="rounded-xl border border-white/10 bg-black/25 p-6">
+        <h1 className="text-3xl font-semibold">Pricing</h1>
+        <p className="mt-3 text-slate-300">Starter plans available soon. Contact sales for enterprise ACLEDA routing and custom limits.</p>
+      </section>
+    </div>
+  );
+}
+
+function randomApiKey() {
+  return `aj_live_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+}
+
+function Dashboard({ user, session, showToast, setUser, navigate }) {
+  const [config, setConfig] = useState({ acleda_merchant_id: '', acleda_store_id: '', encrypted_secret_key: '', api_key: randomApiKey() });
+  const [transactions, setTransactions] = useState([]);
+  const [copiedAfterLogin, setCopiedAfterLogin] = useState(false);
+
+  useEffect(() => {
+    async function load() {
+      const cfg = await supabaseLite.getMerchantConfig(session.access_token, user.id);
+      if (cfg.data?.[0]) {
+        setConfig(cfg.data[0]);
+      }
+
+      const tx = await supabaseLite.getTransactions(session.access_token, user.id);
+      setTransactions((tx.data || []).slice(0, 5));
+    }
+    load();
+  }, [session.access_token, user.id]);
+
+  const canRunPaymentTests = useMemo(
+    () => Boolean(config.acleda_merchant_id && config.acleda_store_id && config.encrypted_secret_key),
+    [config.acleda_merchant_id, config.acleda_store_id, config.encrypted_secret_key]
+  );
+
+  useEffect(() => {
+    async function copyAfterLogin() {
+      if (!config.api_key || copiedAfterLogin) return;
+      try {
+        await navigator.clipboard.writeText(config.api_key);
+        showToast('API Key Copied');
+      } catch {
+        showToast('Logged in. Use Copy button to copy API key.');
+      }
+      setCopiedAfterLogin(true);
+    }
+    copyAfterLogin();
+  }, [config.api_key, copiedAfterLogin, showToast]);
+
+  async function saveConfig() {
+    const payload = {
+      user_id: user.id,
+      acleda_merchant_id: config.acleda_merchant_id,
+      acleda_store_id: config.acleda_store_id,
+      encrypted_secret_key: config.encrypted_secret_key,
+      api_key: config.api_key || randomApiKey(),
+    };
+
+    const { error } = await supabaseLite.upsertMerchantConfig(session.access_token, payload);
+    if (error) return showToast(error.message);
+    showToast('Configuration Saved');
+  }
+
+  async function copyApiKey() {
+    try {
+      await navigator.clipboard.writeText(config.api_key);
+      showToast('API Key Copied');
+    } catch {
+      showToast('Clipboard blocked. Copy manually.');
+    }
+  }
+
+  async function testGenerateQr() {
+    if (!canRunPaymentTests) {
+      showToast('Save ACLEDA configuration first.');
+      return;
+    }
+    const { data, error } = await supabaseLite.testPaymentAction(session.access_token, 'qr', config.api_key);
+    if (error) return showToast(error.message);
+    showToast(data?.message || 'QR generation test sent');
+  }
+
+  async function testCreditCard() {
+    if (!canRunPaymentTests) {
+      showToast('Save ACLEDA configuration first.');
+      return;
+    }
+    const { data, error } = await supabaseLite.testPaymentAction(session.access_token, 'card', config.api_key);
+    if (error) return showToast(error.message);
+    showToast(data?.message || 'Credit card test sent');
+  }
+
+  return (
+    <div className="mx-auto max-w-6xl px-4 py-10">
+      <div className="mb-6 flex items-center justify-between">
+        <h1 className="text-3xl font-semibold">Developer Dashboard</h1>
+        <button
+          onClick={() => {
+            supabaseLite.clearSession();
+            setUser(null);
+            navigate('/');
+          }}
+          className="rounded-md border border-white/20 px-3 py-2 text-sm"
+        >
+          Sign Out
+        </button>
+      </div>
+
+      <section className="rounded-xl border border-white/10 bg-black/25 p-6">
+        <p className="text-sm text-slate-400">API Key</p>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <p className="font-mono text-sm text-sky-200">{config.api_key}</p>
+          <button onClick={copyApiKey} className="inline-flex items-center gap-2 rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-4 py-2 text-sm"><Copy className="h-4 w-4" />Copy</button>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-xl border border-white/10 bg-black/25 p-6">
+        <h2 className="mb-2 text-xl font-semibold">Merchant Configuration</h2>
+        <p className="mb-4 text-sm text-slate-400">Save your ACLEDA merchant credentials. For production security, encrypt the secret key server-side before storage.</p>
+        <div className="grid gap-4 md:grid-cols-2">
+          <input value={config.acleda_merchant_id || ''} onChange={(e) => setConfig((c) => ({ ...c, acleda_merchant_id: e.target.value }))} placeholder="ACLEDA Merchant ID" className="rounded-md border border-white/15 bg-transparent px-3 py-2" />
+          <input value={config.acleda_store_id || ''} onChange={(e) => setConfig((c) => ({ ...c, acleda_store_id: e.target.value }))} placeholder="ACLEDA Store ID" className="rounded-md border border-white/15 bg-transparent px-3 py-2" />
+          <input value={config.encrypted_secret_key || ''} onChange={(e) => setConfig((c) => ({ ...c, encrypted_secret_key: e.target.value }))} placeholder="Encrypted Secret Key" className="md:col-span-2 rounded-md border border-white/15 bg-transparent px-3 py-2" />
+        </div>
+        <div className="mt-4 flex flex-wrap gap-3">
+          <button onClick={saveConfig} className="rounded-md bg-gradient-to-r from-sky-500 to-violet-500 px-4 py-2 font-medium">Save Configuration</button>
+          <button onClick={testGenerateQr} className="inline-flex items-center gap-2 rounded-md border border-sky-400/50 px-4 py-2 text-sm"><QrCode className="h-4 w-4" />Test Generate QR</button>
+          <button onClick={testCreditCard} className="inline-flex items-center gap-2 rounded-md border border-violet-400/50 px-4 py-2 text-sm"><CreditCard className="h-4 w-4" />Test Credit Card</button>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded-xl border border-white/10 bg-black/25 p-6">
+        <h2 className="mb-4 text-xl font-semibold">Recent Transactions (Last 5)</h2>
+        <table className="w-full text-left text-sm">
+          <thead className="text-slate-400">
+            <tr><th className="py-2">ID</th><th>Amount</th><th>Status</th><th>Created</th></tr>
+          </thead>
+          <tbody>
+            {transactions.length === 0 ? (
+              <tr><td className="py-4 text-slate-500" colSpan={4}>No transactions yet.</td></tr>
+            ) : (
+              transactions.map((row) => (
+                <tr key={row.id} className="border-t border-white/5">
+                  <td className="py-2 font-mono text-xs">{row.id.slice(0, 10)}...</td>
+                  <td>${Number(row.amount).toFixed(2)}</td>
+                  <td>{row.status}</td>
+                  <td>{new Date(row.created_at).toLocaleString()}</td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  );
+}
 
 export default function App() {
-    const [lang, setLang] = useState('en');
-    const [view, setView] = useState('home'); // 'home', 'terms', 'privacy'
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
+  const { pathname, navigate } = usePathname();
+  const [user, setUser] = useState(null);
+  const [session, setSession] = useState(null);
+  const [toast, setToast] = useState('');
 
-    const t = translations[lang];
+  function showToast(message) {
+    setToast(message);
+    setTimeout(() => setToast(''), 2500);
+  }
 
-    useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 50);
-        window.addEventListener('scroll', handleScroll);
-        window.scrollTo(0, 0);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, [view]);
+  useEffect(() => {
+    const existing = supabaseLite.getSession();
+    if (!existing?.access_token) return;
+    setSession(existing);
+    supabaseLite.getUser(existing.access_token).then((res) => setUser(res.data?.id ? res.data : null));
+  }, []);
 
-    const toggleLang = () => {
-        setLang(prev => prev === 'en' ? 'kh' : 'en');
-    };
+  useEffect(() => {
+    if (pathname === '/dashboard' && !user) navigate('/login');
+  }, [pathname, user, navigate]);
 
-    const navigateTo = (newView) => {
-        setView(newView);
-        setIsMenuOpen(false);
-    };
-
-    // --- Sub-components for Views ---
-    const LegalPage = ({ title, content }) => (
-        <div className="pt-32 pb-20 px-6 max-w-4xl mx-auto">
-            <button
-                onClick={() => setView('home')}
-                className="flex items-center gap-2 text-pink-400 hover:text-amber-400 mb-8 font-bold transition-colors"
-            >
-                <ArrowLeft size={20} /> {t.legal.back}
-            </button>
-            <div className="bg-white/5 border border-pink-500/20 rounded-[2.5rem] p-10 md:p-16 backdrop-blur-xl">
-                <h1 className="text-4xl md:text-6xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-amber-400">
-                    {title}
-                </h1>
-                <div className="text-gray-300 leading-relaxed text-lg space-y-6">
-                    <p>{content}</p>
-                    <p>Last updated: February 12, 2026</p>
-                </div>
-            </div>
-        </div>
-    );
-
-    const HomePage = () => (
-        <>
-            {/* Hero */}
-            <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 px-6 overflow-hidden">
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full max-w-4xl bg-pink-500/10 blur-[120px] rounded-full -z-10"></div>
-                <div className="absolute top-1/4 right-1/4 w-32 h-32 bg-amber-400/10 blur-[60px] rounded-full -z-10 animate-pulse"></div>
-
-                <div className="max-w-7xl mx-auto text-center">
-                    <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-pink-500/10 border border-pink-500/20 text-[10px] md:text-xs font-bold text-pink-400 mb-8 tracking-widest uppercase shadow-lg shadow-pink-500/5">
-                        <Heart size={14} className="animate-pulse" />
-                        {t.hero.badge}
-                    </div>
-
-                    <h1 className="text-5xl md:text-8xl font-black tracking-tight mb-8 leading-[1.1]">
-                        {t.hero.title} <br/>
-                        <span className="text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-rose-400 to-amber-400">
-              {t.hero.titleAccent}
-            </span>
-                    </h1>
-
-                    <p className="text-pink-100/60 text-lg md:text-xl max-w-3xl mx-auto mb-12 leading-relaxed">
-                        {t.hero.subtitle}
-                    </p>
-
-                    <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="group relative w-full sm:w-auto px-8 py-5 bg-gradient-to-r from-pink-500 to-rose-600 rounded-2xl font-black text-lg overflow-hidden transition-all hover:scale-105 active:scale-95 shadow-xl shadow-pink-500/20"
-                        >
-                            <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300"></div>
-                            <span className="relative flex items-center justify-center gap-2">
-                <Download size={22} />
-                                {t.hero.ctaPrimary}
-              </span>
-                        </button>
-                        <a href="#features" className="w-full sm:w-auto px-8 py-5 bg-white/5 border border-white/10 rounded-2xl font-bold text-lg hover:bg-pink-500/10 hover:border-pink-500/30 transition-all text-center">
-                            {t.hero.ctaSecondary}
-                        </a>
-                    </div>
-
-                    <div className="mt-24 relative group">
-                        <div className="absolute -inset-1 bg-gradient-to-r from-pink-500 to-amber-400 rounded-[2.5rem] blur opacity-20 group-hover:opacity-30 transition-opacity"></div>
-                        <div className="relative bg-[#0d0d0d] rounded-[2.5rem] overflow-hidden border border-white/10 aspect-video shadow-2xl">
-                            <div className="h-10 bg-white/5 border-b border-white/10 flex items-center px-6 justify-between">
-                                <div className="flex gap-2">
-                                    <div className="w-3 h-3 rounded-full bg-pink-500/30 border border-pink-500/50"></div>
-                                    <div className="w-3 h-3 rounded-full bg-amber-400/30 border border-amber-400/50"></div>
-                                    <div className="w-3 h-3 rounded-full bg-white/10 border border-white/20"></div>
-                                </div>
-                                <div className="text-[10px] uppercase tracking-widest font-black text-pink-300/50">KESOR BLUSH ENGINE</div>
-                                <Star size={12} className="text-amber-400/40" />
-                            </div>
-                            <div className="h-full flex items-center justify-center bg-gradient-to-b from-transparent to-pink-500/5 cursor-pointer">
-                                <div className="text-center group-hover:scale-110 transition-transform duration-700">
-                                    <div className="w-24 h-24 bg-gradient-to-br from-pink-500 to-amber-400 rounded-full flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-pink-500/40 border-4 border-white/10">
-                                        <Zap size={40} fill="white" className="text-white" />
-                                    </div>
-                                    <p className="font-bold text-pink-200/60 uppercase tracking-widest text-sm">{t.hero.previewText}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Features */}
-            <section id="features" className="py-32 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="text-center mb-20">
-                        <h2 className="text-4xl md:text-6xl font-black mb-6 text-white">{t.features.title}</h2>
-                        <p className="text-xl text-pink-200/40">{t.features.subtitle}</p>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                        <div className="md:col-span-2 group bg-white/5 border border-white/10 rounded-[3rem] p-10 flex flex-col justify-between relative overflow-hidden transition-all hover:border-pink-500/40">
-                            <div className="relative z-10">
-                                <div className="w-16 h-16 bg-pink-500/10 rounded-2xl flex items-center justify-center mb-8 border border-pink-500/20">
-                                    <Cpu className="text-pink-400" size={32} />
-                                </div>
-                                <h3 className="text-3xl font-bold mb-4">{t.features.performance.title}</h3>
-                                <p className="text-pink-100/50 text-lg leading-relaxed max-w-lg">
-                                    {t.features.performance.desc}
-                                </p>
-                            </div>
-                            <div className="mt-12 flex items-center gap-6 relative z-10">
-                                <div className="flex-1 h-3 bg-white/5 rounded-full overflow-hidden border border-white/5">
-                                    <div className="h-full w-4/5 bg-gradient-to-r from-pink-500 to-amber-400 rounded-full"></div>
-                                </div>
-                                <span className="text-6xl font-black text-white/5 italic select-none tracking-tighter uppercase">{t.features.performance.tag}</span>
-                            </div>
-                            <div className="absolute -top-10 -right-10 w-80 h-80 bg-pink-600/5 blur-[100px] rounded-full"></div>
-                        </div>
-
-                        <div className="group bg-white/5 border border-white/10 rounded-[3rem] p-10 transition-all hover:border-amber-400/40">
-                            <div className="w-16 h-16 bg-amber-400/10 rounded-2xl flex items-center justify-center mb-8 border border-amber-400/20">
-                                <Star className="text-amber-400" size={32} />
-                            </div>
-                            <h3 className="text-2xl font-bold mb-4">{t.features.mods.title}</h3>
-                            <p className="text-pink-100/50 leading-relaxed">
-                                {t.features.mods.desc}
-                            </p>
-                        </div>
-
-                        <div className="group bg-white/5 border border-white/10 rounded-[3rem] p-10 transition-all hover:border-pink-400/40">
-                            <div className="w-16 h-16 bg-pink-400/10 rounded-2xl flex items-center justify-center mb-8 border border-pink-400/20">
-                                <Layout className="text-pink-400" size={32} />
-                            </div>
-                            <h3 className="text-2xl font-bold mb-4">{t.features.ui.title}</h3>
-                            <p className="text-pink-100/50 leading-relaxed">
-                                {t.features.ui.desc}
-                            </p>
-                        </div>
-
-                        <div className="md:col-span-2 group bg-white/5 border border-white/10 rounded-[3rem] p-10 transition-all hover:border-rose-400/40">
-                            <div className="flex flex-col md:flex-row gap-12 items-center">
-                                <div className="flex-1">
-                                    <div className="w-16 h-16 bg-rose-500/10 rounded-2xl flex items-center justify-center mb-8 border border-rose-500/20">
-                                        <Heart className="text-rose-500" size={32} />
-                                    </div>
-                                    <h3 className="text-2xl font-bold mb-4">{t.features.accounts.title}</h3>
-                                    <p className="text-pink-100/50 leading-relaxed">
-                                        {t.features.accounts.desc}
-                                    </p>
-                                </div>
-                                <div className="flex -space-x-6">
-                                    {[1, 2, 3].map(i => (
-                                        <div key={i} className="w-24 h-24 rounded-3xl border-4 border-[#050505] bg-gradient-to-br from-pink-500 to-amber-400 flex items-center justify-center text-3xl font-black shadow-2xl transform hover:-translate-y-4 transition-transform duration-300">
-                                            {String.fromCharCode(64 + i)}
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            {/* Release Log */}
-            <section id="versions" className="py-32 bg-white/[0.01] border-y border-white/5">
-                <div className="max-w-3xl mx-auto px-6">
-                    <div className="text-center mb-16">
-                        <h2 className="text-4xl font-black mb-4">{t.versions.title}</h2>
-                        <p className="text-pink-200/40">{t.versions.subtitle}</p>
-                    </div>
-
-                    <div className="relative">
-                        <div className="absolute left-[31px] top-0 bottom-0 w-px bg-gradient-to-b from-pink-500 via-pink-500/20 to-transparent"></div>
-
-                        <div className="relative pl-20 pb-12">
-                            <div className="absolute left-0 w-16 h-16 bg-pink-600/20 rounded-full flex items-center justify-center border border-pink-500/30">
-                                <Star className="text-amber-400" size={24} />
-                            </div>
-                            <div className="bg-white/5 border border-white/10 rounded-[2.5rem] p-10 backdrop-blur-sm">
-                                <div className="flex flex-wrap justify-between items-start gap-4 mb-8">
-                                    <div>
-                                        <span className="text-[10px] font-black text-amber-400 uppercase tracking-[0.3em]">{t.versions.latest}</span>
-                                        <h4 className="text-3xl font-black mt-2">1.0.0-BETA</h4>
-                                    </div>
-                                    <span className="text-sm font-bold text-pink-300/60 bg-pink-500/5 px-4 py-2 rounded-xl border border-pink-500/10">{t.versions.v1.date}</span>
-                                </div>
-                                <ul className="grid gap-5">
-                                    {t.versions.v1.items.map((item, idx) => (
-                                        <li key={idx} className="flex items-center gap-4 text-pink-100/60 font-medium">
-                                            <div className="w-2 h-2 bg-pink-500 rounded-full shadow-[0_0_10px_rgba(236,72,153,0.5)]"></div>
-                                            {item}
-                                        </li>
-                                    ))}
-                                </ul>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </>
-    );
-
-    return (
-        <div className={`min-h-screen bg-[#050505] text-white selection:bg-pink-500/40 ${lang === 'kh' ? 'font-khmer' : ''}`}>
-            {/* --- Navigation --- */}
-            <nav className={`fixed top-0 w-full z-50 transition-all duration-500 px-6 py-4 ${scrolled ? 'pt-2' : ''}`}>
-                <div className="max-w-7xl mx-auto flex justify-between items-center bg-white/5 backdrop-blur-2xl border border-white/10 rounded-3xl px-6 py-3 shadow-2xl">
-                    <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigateTo('home')}>
-                        <div className="w-10 h-10 bg-gradient-to-br from-pink-500 to-amber-400 rounded-xl flex items-center justify-center font-black text-xl shadow-lg shadow-pink-500/20 border border-white/20">K</div>
-                        <span className="text-xl font-black tracking-tight hidden sm:block">Kesor <span className="text-pink-400">Launcher</span></span>
-                    </div>
-
-                    <div className="hidden md:flex items-center gap-8 text-sm font-bold text-pink-200/50 uppercase tracking-widest">
-                        <a href="#features" onClick={() => setView('home')} className="hover:text-pink-400 transition-colors">{t.nav.features}</a>
-                        <a href="#versions" onClick={() => setView('home')} className="hover:text-pink-400 transition-colors">{t.nav.versions}</a>
-                        <button onClick={() => navigateTo('terms')} className="hover:text-pink-400 transition-colors">{t.nav.terms}</button>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                        <button
-                            onClick={toggleLang}
-                            className="flex items-center gap-2 bg-white/5 hover:bg-white/10 px-4 py-2 rounded-xl border border-white/10 transition-all text-xs font-black tracking-widest"
-                        >
-                            <Globe size={14} className="text-amber-400" />
-                            {lang === 'en' ? 'KH' : 'EN'}
-                        </button>
-                        <button
-                            onClick={() => setIsModalOpen(true)}
-                            className="bg-white text-black px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-pink-100 transition-all hidden sm:block shadow-lg"
-                        >
-                            {t.nav.download}
-                        </button>
-                        <button className="md:hidden p-2 text-pink-400" onClick={() => setIsMenuOpen(!isMenuOpen)}>
-                            {isMenuOpen ? <X size={28}/> : <Menu size={28}/>}
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
-            {/* --- Mobile Menu --- */}
-            {isMenuOpen && (
-                <div className="fixed inset-0 z-40 bg-black/95 backdrop-blur-3xl md:hidden flex flex-col items-center justify-center gap-10 text-3xl font-black">
-                    <a href="#features" onClick={() => navigateTo('home')}>{t.nav.features}</a>
-                    <a href="#versions" onClick={() => navigateTo('home')}>{t.nav.versions}</a>
-                    <button onClick={() => navigateTo('terms')}>{t.nav.terms}</button>
-                    <button onClick={() => navigateTo('privacy')}>{t.nav.privacy}</button>
-                    <button onClick={() => setIsModalOpen(true)} className="text-pink-500">{t.nav.download}</button>
-                </div>
-            )}
-
-            {/* --- Main Content Switching --- */}
-            <main>
-                {view === 'home' && <HomePage />}
-                {view === 'terms' && <LegalPage title={t.legal.termsTitle} content={t.legal.termsContent} />}
-                {view === 'privacy' && <LegalPage title={t.legal.privacyTitle} content={t.legal.privacyContent} />}
-            </main>
-
-            {/* --- Final CTA --- */}
-            {view === 'home' && (
-                <section id="download" className="py-32 px-6">
-                    <div className="max-w-5xl mx-auto bg-gradient-to-br from-pink-600 via-rose-600 to-amber-500 rounded-[3.5rem] p-12 md:p-24 text-center relative overflow-hidden shadow-2xl shadow-pink-500/20">
-                        <div className="absolute top-0 right-0 p-10 opacity-10 rotate-12">
-                            <Star size={300} fill="white" />
-                        </div>
-                        <div className="absolute -bottom-20 -left-20 p-10 opacity-10">
-                            <Heart size={300} fill="white" />
-                        </div>
-
-                        <h2 className="text-4xl md:text-7xl font-black mb-8 relative z-10 leading-tight">{t.cta.title}</h2>
-                        <p className="text-pink-100/80 text-lg md:text-xl max-w-2xl mx-auto mb-14 relative z-10 font-medium">
-                            {t.cta.subtitle}
-                        </p>
-
-                        <div className="flex flex-col items-center gap-10 relative z-10">
-                            <button
-                                onClick={() => setIsModalOpen(true)}
-                                className="px-14 py-7 bg-white text-rose-600 rounded-[2rem] font-black text-2xl hover:scale-105 active:scale-95 transition-all shadow-2xl hover:shadow-white/20"
-                            >
-                                {t.cta.button}
-                            </button>
-                            <div className="flex flex-wrap justify-center gap-10 text-sm font-black text-white/60 uppercase tracking-widest">
-                                <a href="#" className="hover:text-white transition-colors">{t.cta.macos}</a>
-                                <a href="#" className="hover:text-white transition-colors">{t.cta.linux}</a>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            )}
-
-            {/* --- Footer --- */}
-            <footer className="py-24 border-t border-white/5 px-6">
-                <div className="max-w-7xl mx-auto flex flex-col items-center">
-                    <div className="flex items-center gap-3 mb-10">
-                        <div className="w-12 h-12 bg-white/5 rounded-2xl flex items-center justify-center font-black text-pink-400 border border-pink-500/20 shadow-lg">K</div>
-                        <span className="font-black text-2xl tracking-tight text-white/80">Kesor <span className="text-amber-400">Launcher</span></span>
-                    </div>
-
-                    <p className="text-pink-100/20 text-center text-sm max-w-lg mb-12 leading-relaxed italic">
-                        {t.footer.disclaimer}
-                    </p>
-
-                    <div className="flex flex-wrap justify-center gap-10 text-[10px] font-black text-gray-500 uppercase tracking-[0.4em]">
-                        <button onClick={() => navigateTo('privacy')} className="hover:text-pink-400 transition-colors">{t.footer.links[0]}</button>
-                        <button onClick={() => navigateTo('terms')} className="hover:text-pink-400 transition-colors">{t.footer.links[1]}</button>
-                        <a href="#" className="hover:text-pink-400 transition-colors">{t.footer.links[2]}</a>
-                        <a href="#" className="hover:text-pink-400 transition-colors">{t.footer.links[3]}</a>
-                    </div>
-
-                    <div className="mt-16 flex items-center gap-4 text-pink-500/20">
-                        <div className="h-px w-10 bg-current"></div>
-                        <div className="text-[10px] font-black tracking-[0.5em] uppercase">KESOR LABS 2026</div>
-                        <div className="h-px w-10 bg-current"></div>
-                    </div>
-                </div>
-            </footer>
-
-            {/* --- Download Modal --- */}
-            {isModalOpen && (
-                <div className="fixed inset-0 z-[100] flex items-center justify-center p-6">
-                    <div className="absolute inset-0 bg-black/95 backdrop-blur-xl" onClick={() => setIsModalOpen(false)}></div>
-                    <div className="relative bg-[#0a0a0a] border border-pink-500/30 max-w-md w-full p-12 rounded-[3.5rem] text-center shadow-[0_0_100px_rgba(236,72,153,0.1)]">
-                        <div className="w-24 h-24 bg-pink-500/10 rounded-[2rem] flex items-center justify-center mx-auto mb-10 border border-pink-500/20">
-                            <div className="animate-bounce">
-                                <Download className="text-amber-400" size={40} />
-                            </div>
-                        </div>
-                        <h3 className="text-3xl font-black mb-4 text-white">{t.modal.title}</h3>
-                        <p className="text-pink-100/40 text-lg leading-relaxed mb-12 font-medium">
-                            {t.modal.desc}
-                        </p>
-                        <button
-                            onClick={() => setIsModalOpen(false)}
-                            className="w-full bg-gradient-to-r from-pink-500 to-rose-600 py-6 rounded-2xl font-black text-2xl hover:brightness-110 transition-all shadow-xl shadow-pink-500/20"
-                        >
-                            {t.modal.button}
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Add Custom Global CSS for Khmer Font (Fallback) */}
-            <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Kantumruy+Pro:wght@400;700&display=swap');
-        .font-khmer {
-          font-family: 'Kantumruy Pro', sans-serif !important;
-        }
-        html {
-          scroll-behavior: smooth;
-        }
-      `}</style>
-        </div>
-    );
+  return (
+    <Layout>
+      <Toast message={toast} />
+      <Navbar user={user} navigate={navigate} />
+      {pathname === '/' && <LandingPage user={user} navigate={navigate} />}
+      {pathname === '/docs' && <DocsPage />}
+      {pathname === '/pricing' && <PricingPage />}
+      {pathname === '/login' && <AuthPage mode="login" navigate={navigate} showToast={showToast} setUser={setUser} setSession={setSession} />}
+      {pathname === '/signup' && <AuthPage mode="signup" navigate={navigate} showToast={showToast} setUser={setUser} setSession={setSession} />}
+      {pathname === '/dashboard' && user && session && <Dashboard user={user} session={session} showToast={showToast} setUser={setUser} navigate={navigate} />}
+      {!['/', '/docs', '/pricing', '/login', '/signup', '/dashboard'].includes(pathname) && <div className="p-10">Page not found</div>}
+      {!user && pathname === '/dashboard' && <div className="flex min-h-[40vh] items-center justify-center text-slate-300"><Zap className="mr-2 h-5 w-5 animate-pulse" /> Redirecting...</div>}
+    </Layout>
+  );
 }
